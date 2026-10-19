@@ -1,0 +1,33 @@
+{
+  "host": "Bridge PC",
+  "ntfy": {
+    "server": "https://ntfy.sh",
+    "topic": "sof-alerts-CHANGE-ME",
+    "token": ""
+  },
+  "alerts": {
+    "dedupeWindowSec": 300,
+    "maxPerMinute": 6
+  },
+  "heartbeatMin": 5,
+  "sources": [
+    {
+      "name": "sof-bridge",
+      "type": "file",
+      "dir": "C:\\burdens\\logs",
+      "pattern": "^bridge-(error|exceptions|rejections)-\\d{4}-\\d{2}-\\d{2}\\.log$",
+      "entryStart": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2} \\["
+    }
+  ],
+  "checkOptions": {
+    "intervalSec": 60,
+    "failThreshold": 2,
+    "remindEveryMin": 30
+  },
+  "checks": [
+    { "name": "sof-bridge (local)", "url": "http://localhost:3001/health" },
+    { "name": "Frameworks ERP", "type": "tcp", "host": "192.168.5.138", "port": 9200 },
+    { "name": "sof-main (EC2)", "url": "https://SOF-MAIN-HOST/health" },
+    { "name": "sof-api (EC2)", "url": "https://SOF-API-HOST/health" }
+  ]
+}

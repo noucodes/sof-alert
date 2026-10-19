@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'" />
+    <title>SOF Alert</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="dot" id="overall-dot"></span>
+        <div>
+          <h1>SOF Alert</h1>
+          <p id="overall-text" class="muted">Starting…</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="btn-run" title="Run all health checks now">Run checks</button>
+        <button id="btn-test" title="Publish a test alert to ntfy (phone + this app)">Send test</button>
+        <button id="btn-pause">Pause 1h</button>
+        <button id="btn-config">Config</button>
+      </div>
+    </header>
+
+    <div id="banner" class="banner" hidden></div>
+
+    <main class="layout">
+      <section class="column">
+        <div class="section-head">
+          <h2>Services</h2>
+          <span class="muted small">checked from this PC</span>
+        </div>
+        <div id="checks" class="cards"></div>
+
+        <div class="section-head">
+          <h2>Agents</h2>
+          <span class="muted small">heartbeat every 5 min</span>
+        </div>
+        <div id="agents" class="agents"></div>
+
+        <p class="muted small footer" id="conn"></p>
+      </section>
+
+      <section class="column feed">
+        <div class="section-head">
+          <h2>Alerts <span id="alert-count" class="count"></span></h2>
+          <button id="btn-clear" class="ghost small">Clear</button>
+        </div>
+        <div class="filters">
+          <div class="segmented" id="filter">
+            <button data-filter="all" class="active">All</button>
+            <button data-filter="error">Errors</button>
+            <button data-filter="outage">Outages</button>
+            <button data-filter="info">Info</button>
+          </div>
+          <input id="search" type="search" placeholder="Search alerts" />
+        </div>
+        <ol id="alerts" class="alerts"></ol>
+      </section>
+    </main>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

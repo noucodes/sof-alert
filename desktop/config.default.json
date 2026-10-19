@@ -1,0 +1,22 @@
+{
+  "ntfy": {
+    "server": "https://ntfy.sh",
+    "topic": "sof-alerts-CHANGE-ME",
+    "token": ""
+  },
+  "notify": {
+    "desktop": true,
+    "minPriority": 3
+  },
+  "agentStaleMin": 12,
+  "checkOptions": {
+    "intervalSec": 60,
+    "failThreshold": 2,
+    "remindEveryMin": 30
+  },
+  "checks": [
+    { "name": "sof-main (EC2)", "url": "https://SOF-MAIN-HOST/health" },
+    { "name": "sof-api (EC2)", "url": "https://SOF-API-HOST/health" },
+    { "name": "sof-bridge (via tunnel)", "url": "https://BRIDGE-TUNNEL-HOST/health" }
+  ]
+}

@@ -1,0 +1,17 @@
+[Unit]
+Description=SOF alert agent (log + health watcher, pushes to ntfy)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+# journalctl needs the adm or systemd-journal group to read other units' logs
+SupplementaryGroups=systemd-journal
+WorkingDirectory=/home/ubuntu/sof-alert-agent
+ExecStart=/usr/bin/node /home/ubuntu/sof-alert-agent/src/index.js /home/ubuntu/sof-alert-agent/config.json
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

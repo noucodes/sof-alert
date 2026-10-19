@@ -1,0 +1,32 @@
+{
+  "name": "sof-alert",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Desktop alert dashboard for sof-* services (Electron)",
+  "main": "desktop/main.js",
+  "scripts": {
+    "start": "electron .",
+    "agent": "node agent/src/index.js",
+    "dist": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.burdens.sofalert",
+    "productName": "SOF Alert",
+    "files": [
+      "desktop/**",
+      "agent/src/**",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3"
+  }
+}

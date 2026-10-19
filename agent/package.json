@@ -1,0 +1,13 @@
+{
+  "name": "sof-alert-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Watches sof-* logs and service health, pushes alerts to ntfy",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/index.js"
+  }
+}

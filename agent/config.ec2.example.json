@@ -1,0 +1,43 @@
+{
+  "host": "EC2",
+  "ntfy": {
+    "server": "https://ntfy.sh",
+    "topic": "sof-alerts-CHANGE-ME",
+    "token": ""
+  },
+  "alerts": {
+    "dedupeWindowSec": 300,
+    "maxPerMinute": 6
+  },
+  "heartbeatMin": 5,
+  "sources": [
+    {
+      "name": "sof-main",
+      "type": "file",
+      "dir": "/home/ubuntu/sof-main/logs",
+      "pattern": "^(error|exceptions|rejections)-\\d{4}-\\d{2}-\\d{2}\\.log$",
+      "entryStart": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2} \\["
+    },
+    {
+      "name": "sof-api",
+      "type": "journald",
+      "units": ["sof-api"],
+      "entryStart": "^\\[Nest\\]",
+      "match": "\\bERROR\\b|Main process exited|Failed with result"
+    },
+    {
+      "name": "sof-main",
+      "type": "journald",
+      "units": ["sof-main"],
+      "match": "Main process exited|Failed with result"
+    }
+  ],
+  "checkOptions": {
+    "intervalSec": 60,
+    "failThreshold": 2,
+    "remindEveryMin": 30
+  },
+  "checks": [
+    { "name": "sof-bridge (via tunnel)", "url": "https://BRIDGE-TUNNEL-HOST/health" }
+  ]
+}
