@@ -5,6 +5,11 @@
     "topic": "sof-alerts-CHANGE-ME",
     "token": ""
   },
+  "push": {
+    "enabled": true,
+    "minPriority": 3,
+    "accessToken": ""
+  },
   "alerts": {
     "dedupeWindowSec": 300,
     "maxPerMinute": 6
@@ -21,14 +26,18 @@
     {
       "name": "sof-api",
       "type": "journald",
-      "units": ["sof-api"],
+      "units": [
+        "sof-api"
+      ],
       "entryStart": "^\\[Nest\\]",
       "match": "\\bERROR\\b|Main process exited|Failed with result"
     },
     {
       "name": "sof-main",
       "type": "journald",
-      "units": ["sof-main"],
+      "units": [
+        "sof-main"
+      ],
       "match": "Main process exited|Failed with result"
     }
   ],
@@ -38,6 +47,9 @@
     "remindEveryMin": 30
   },
   "checks": [
-    { "name": "sof-bridge (via tunnel)", "url": "https://BRIDGE-TUNNEL-HOST/health" }
+    {
+      "name": "sof-bridge (via tunnel)",
+      "url": "https://BRIDGE-TUNNEL-HOST/health"
+    }
   ]
 }

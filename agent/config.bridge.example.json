@@ -5,6 +5,11 @@
     "topic": "sof-alerts-CHANGE-ME",
     "token": ""
   },
+  "push": {
+    "enabled": true,
+    "minPriority": 3,
+    "accessToken": ""
+  },
   "alerts": {
     "dedupeWindowSec": 300,
     "maxPerMinute": 6
@@ -25,9 +30,23 @@
     "remindEveryMin": 30
   },
   "checks": [
-    { "name": "sof-bridge (local)", "url": "http://localhost:3001/health" },
-    { "name": "Frameworks ERP", "type": "tcp", "host": "192.168.5.138", "port": 9200 },
-    { "name": "sof-main (EC2)", "url": "https://SOF-MAIN-HOST/health" },
-    { "name": "sof-api (EC2)", "url": "https://SOF-API-HOST/health" }
+    {
+      "name": "sof-bridge (local)",
+      "url": "http://localhost:3001/health"
+    },
+    {
+      "name": "Frameworks ERP",
+      "type": "tcp",
+      "host": "192.168.5.138",
+      "port": 9200
+    },
+    {
+      "name": "sof-main (EC2)",
+      "url": "https://SOF-MAIN-HOST/health"
+    },
+    {
+      "name": "sof-api (EC2)",
+      "url": "https://SOF-API-HOST/health"
+    }
   ]
 }

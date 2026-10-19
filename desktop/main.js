@@ -1,10 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const { app, BrowserWindow, Tray, Menu, Notification, ipcMain, shell } = require('electron');
-const { NtfySubscriber } = require('./ntfy-subscriber');
+const { NtfySubscriber } = require('../agent/src/ntfy-subscriber');
 const { statusIcon } = require('./icons');
 const { CheckMonitor } = require('../agent/src/checks');
-const { createPublisher } = require('../agent/src/ntfy');
+const { createNotifier } = require('../agent/src/notifier');
 const { formatDuration } = require('../agent/src/util');
 
 const MAX_ALERTS = 500;
@@ -286,10 +286,14 @@ function markRead() {
 
 async function sendTest() {
   if (live.configError) return { ok: false, error: live.configError };
-  const ok = await createPublisher(config.ntfy).publish({
+  const { notify, push } = createNotifier(config, {
+    devicesFile: path.join(app.getPath('userData'), 'devices.json'),
+  });
+  await push?.sync().catch(() => {});
+  const ok = await notify({
     title: 'Test alert',
     message: 'If this reached your phone and this app, alerts are working.',
-    priority: 3,
+    priority: 4,
     tags: ['test_tube'],
   });
   return ok ? { ok: true } : { ok: false, error: 'Publishing to ntfy failed — check server/topic/token.' };

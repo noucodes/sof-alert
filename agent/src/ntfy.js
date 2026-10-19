@@ -18,7 +18,10 @@ function createPublisher(ntfy) {
           body: JSON.stringify(payload),
           signal: AbortSignal.timeout(10000),
         });
-        if (res.ok) return true;
+        if (res.ok) {
+          const body = await res.json().catch(() => ({}));
+          return body.id || true;
+        }
         log(`[ntfy] publish failed: HTTP ${res.status} ${await res.text().catch(() => '')}`);
         if (res.status >= 400 && res.status < 500 && res.status !== 429) return false;
       } catch (err) {
@@ -30,7 +33,7 @@ function createPublisher(ntfy) {
   }
 
   // Publishes are serialised so alerts arrive in order and we don't burst
-  // past ntfy's rate limit.
+  // past ntfy's rate limit. Resolves to the ntfy message id, or false.
   function publish({ title, message, priority = 3, tags = [], topic, click }) {
     const payload = {
       topic: topic || ntfy.topic,

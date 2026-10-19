@@ -12,15 +12,22 @@ an EC2 service or sof-bridge goes down.
  │  agent (watches logs,    │          │  agent (watches logs,        │
  │  checks bridge tunnel)   │          │  checks EC2 + bridge + ERP)  │
  └──────────┬───────────────┘          └──────────┬───────────────────┘
-            └──────────────► ntfy topic ◄─────────┘
-                                │
-              ┌─────────────────┴───────────────┐
-         ntfy Android app                Electron desktop app
-       (push notifications)        (dashboard, history, own checks,
-                                      agent heartbeat monitoring)
+            ├──────────────► ntfy topic ◄─────────┤   (history, desktop feed,
+            │                     │               │    phone registrations)
+            └────► Expo push ◄────┼───────────────┘
+                       │          │
+                 SOF Alert   Electron desktop app
+               Android app   (dashboard, history, own checks,
+                               agent heartbeat monitoring)
 ```
 
 Each machine checks the *other* one, so a whole server going down is still reported.
+
+| Folder | What |
+|---|---|
+| `agent/` | Log + health watcher for EC2 and the bridge PC (Node, no dependencies) |
+| `desktop/` | Electron tray app (repo root `package.json`) |
+| `mobile/` | Android app (React Native / Expo, built in the cloud with EAS) |
 
 ## 1. Pick a private topic
 
@@ -33,14 +40,50 @@ node -e "console.log('sof-alerts-' + require('crypto').randomBytes(9).toString('
 Use the same topic in every config below. (For more privacy, self-host ntfy and set
 `ntfy.server` + `ntfy.token`. Log lines can contain order numbers and customer data.)
 
-## 2. Phone (Android)
+## 2. Phone app (Android)
 
-1. Install **ntfy** from the Play Store (or F-Droid).
-2. **+** → subscribe to your topic (server `ntfy.sh` unless self-hosting).
-3. In ntfy settings, allow it to ignore battery optimisation so alerts arrive instantly.
-4. Optional: long-press the subscription → set **priority 5 (DOWN alerts)** to bypass Do Not Disturb.
+The app is built in Expo's cloud (EAS Build), so no Android Studio or SDK is needed
+on your PC. One-time setup:
 
-Alert priorities: `5` service down · `4` log error · `3` recovered / repeated · `1–2` agent start/heartbeat.
+1. **Expo account**: sign up free at https://expo.dev, then from `mobile/`:
+   ```bash
+   cd mobile
+   npm install
+   npx eas-cli@latest login
+   npx eas-cli@latest init        # links the project, writes the projectId into app config
+   ```
+2. **Firebase** (Android delivers push through Firebase Cloud Messaging):
+   1. https://console.firebase.google.com → **Add project** (Analytics not needed).
+   2. **Add app → Android**, package name `com.burdens.sofalert` → download
+      `google-services.json` into `mobile/`. This file is safe to commit.
+   3. Project settings → **Service accounts** → **Generate new private key**. Keep this
+      JSON file **out of git**: it's covered by `.gitignore` if left in `mobile/` with
+      its default `*firebase-adminsdk*` name.
+   4. Upload that key to Expo: `npx eas-cli@latest credentials` → Android → production →
+      Google Service Account → *Manage your FCM V1 service account key* → upload.
+3. **Build the APK**:
+   ```bash
+   npm run build:apk               # = eas build -p android --profile preview
+   ```
+   When it finishes (~10–15 min), open the link on your phone, download and install the
+   APK (allow "install unknown apps" for your browser when asked).
+4. Open **SOF Alert → Settings**, enter your topic, save. Allow notifications when asked.
+   The phone registers itself with the agents automatically. Then tap **Send test**.
+
+In Android **Settings → Apps → SOF Alert → Notifications** you can tune the three
+channels: **Service down** (max importance, allowed to bypass Do Not Disturb),
+**Log errors**, and **Recoveries & info**.
+
+Alert priorities: `5` service down · `4` log error · `3` recovered / repeated · `1–2` agent
+start/heartbeat (no push).
+
+How it works: when the app opens, it publishes its Expo push token to the
+`<topic>-devices` ntfy topic. Each agent follows that topic, saves tokens to
+`devices.json` next to its config, and sends alerts to them via Expo's push service.
+Tokens Expo reports as uninstalled are dropped. The app syncs full alert history from
+ntfy, so tapping a notification opens the complete stack trace.
+
+Previewing UI changes without a phone: `cd mobile && npm run web`.
 
 ## 3. Agent on EC2
 
@@ -53,6 +96,7 @@ scp -r agent ubuntu@EC2_HOST:/home/ubuntu/sof-alert-agent
 cd /home/ubuntu/sof-alert-agent
 cp config.ec2.example.json config.json   # set ntfy.topic and the bridge tunnel URL
 node src/index.js config.json            # quick foreground test, Ctrl+C
+node src/index.js config.json --test     # send one test alert to ntfy + registered phones
 sudo ./deploy/install-linux.sh           # install as systemd service
 sudo journalctl -u sof-alert-agent -f
 ```
@@ -104,6 +148,8 @@ The app reloads it automatically when you save. **Config** opens it.
 | `checkOptions.intervalSec` | 60 | Health check interval |
 | `checkOptions.failThreshold` | 2 | Consecutive failures before "DOWN" |
 | `checkOptions.remindEveryMin` | 30 | Re-alert while still down |
+| `push.enabled` | true | Send alerts to registered phones via Expo push |
+| `push.minPriority` | 3 | Lowest priority pushed to phones (agent start is 2) |
 | `heartbeatMin` | 5 | Heartbeat interval (desktop flags an agent silent after `agentStaleMin`, 12) |
 
 Source types: `file` (`dir`, `pattern`, optional `entryStart` for multi-line entries,

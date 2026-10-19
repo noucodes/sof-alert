@@ -1,14 +1,18 @@
 const fs = require('fs');
 const path = require('path');
-const { createPublisher } = require('./ntfy');
+const { createNotifier } = require('./notifier');
 const { Alerter } = require('./alerter');
 const { CheckMonitor } = require('./checks');
 const { FileSource } = require('./sources/file');
 const { JournaldSource } = require('./sources/journald');
 const { formatDuration, log } = require('./util');
 
+const args = process.argv.slice(2);
+const testMode = args.includes('--test');
+const configArg = args.find((a) => !a.startsWith('--'));
+
 function loadConfig() {
-  const file = path.resolve(process.argv[2] || process.env.SOF_ALERT_CONFIG || path.join(__dirname, '..', 'config.json'));
+  const file = path.resolve(configArg || process.env.SOF_ALERT_CONFIG || path.join(__dirname, '..', 'config.json'));
   const config = JSON.parse(fs.readFileSync(file, 'utf8'));
   if (!config.ntfy?.server || !config.ntfy?.topic || /CHANGE[-_]?ME/i.test(config.ntfy.topic)) {
     throw new Error(`${file}: set ntfy.server and a private ntfy.topic`);
@@ -17,12 +21,34 @@ function loadConfig() {
   config.sources = config.sources || [];
   config.checks = config.checks || [];
   log(`config loaded from ${file}`);
+  config.devicesFile = path.join(path.dirname(file), 'devices.json');
   return config;
+}
+
+// `node src/index.js config.json --test` sends one alert through ntfy and
+// push, then exits — for checking the phone setup end to end.
+async function sendTest(config) {
+  const { notify, push } = createNotifier(config, { devicesFile: config.devicesFile });
+  if (push) {
+    await push.sync();
+    log(`[test] ${push.devices.size} registered device(s)`);
+  }
+  const id = await notify({
+    title: `Test alert from ${config.host}`,
+    message: 'If this reached your phone and the desktop app, alerts are working.',
+    priority: 4,
+    tags: ['test_tube'],
+  });
+  log(id ? `[test] sent (ntfy id ${id})` : '[test] ntfy publish failed');
+  process.exit(id ? 0 : 1);
 }
 
 function main() {
   const config = loadConfig();
-  const { publish } = createPublisher(config.ntfy);
+  if (testMode) return sendTest(config);
+
+  const { notify: publish, push } = createNotifier(config, { devicesFile: config.devicesFile });
+  push?.start();
   const alerter = new Alerter(publish, { host: config.host, ...config.alerts });
   const onEntry = (entry) => alerter.handle(entry);
 
@@ -83,6 +109,7 @@ function main() {
     stopping = true;
     log(`received ${signal}, stopping`);
     clearInterval(heartbeatTimer);
+    push?.stop();
     sources.forEach((s) => s.stop());
     monitor.stop();
     alerter.stop();
